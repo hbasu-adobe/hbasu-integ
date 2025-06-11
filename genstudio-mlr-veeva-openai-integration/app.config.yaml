@@ -1,0 +1,17 @@
+extensions:
+  dx_genstudio/genstudiopem/1:
+    $include: src/genstudiopem/ext.config.yaml
+    runtimeManifest:
+      packages:
+        genstudio-mlr-claims-app:
+          license: Apache-2.0
+          actions:
+            veeva:
+              function: src/genstudiopem/actions/veeva/index.js
+              web: 'yes'
+              runtime: 'nodejs:20'
+              inputs:
+                LOG_LEVEL: debug
+              annotations:
+                require-adobe-auth: true
+                final: true
