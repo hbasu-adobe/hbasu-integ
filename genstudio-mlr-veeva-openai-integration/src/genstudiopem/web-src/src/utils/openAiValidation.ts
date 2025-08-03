@@ -3,16 +3,11 @@ import { Experience } from "@adobe/genstudio-uix-sdk";
 import { ClaimResults, Violation } from "../types";
 import { VIOLATION_STATUS } from "../Constants";
 
-// Only for development; remove for production!
-
 const configuration = new Configuration({
-  //const OPENAI_KEY = process.env.OPENAI_KEY;
+  apiKey: process.env.REACT_APP_OPENAI_API_KEY,
 });
 
 const openai = new OpenAIApi(configuration);
- 
-
-console.log("OpenAI client initialized with key:", "sk-proj-...");
 
 // --- Character limit check logic ---
 const maxCharacterLimits = {
@@ -50,23 +45,25 @@ export async function validateClaimsWithOpenAI(
   console.log('Experience fields:', JSON.stringify(experienceFields, null, 2));
   console.log('Claims text being sent to OpenAI:', claimsText);
 
-  const systemPrompt = `Instructions:
+  const systemPrompt = `You are a medical claims validator for Stage 2 validation. Exact text matching has already been checked. Focus on claims that reference the same topic but have different critical details.
 
-Only validate a claim if the email content explicitly mentions key elements (e.g., numbers, percentages, timelines, quantities, mechanisms).
-General or vague mentions (like "reduces inflammation") must be ignored unless they match specific claim details.
-If numbers, quantities, or timelines are mentioned, they must be an exact match.
-Any numeric mismatch (e.g., 1-2 days vs. 2 weeks) must be flagged as a violation.
-Do not infer, assume, or relax any conditions: only exact matching is allowed.
-When validating:
+NOTE: You only provide warnings, not violations. All your findings will be shown as "Claim Warning" to users.
 
-If email explicitly matches all critical parts of the claim → mark it "valid."
-If email mentions a critical part but changes any numbers, scope, timelines, mechanisms, even slightly → mark it "violated" and explain why.
-If email does not reference a claim with sufficient specificity, skip validating that claim.
+Rules:
+- VALID: Content maintains the same meaning and all critical details as the claim
+- WARNING: Content is about the same topic as the claim but changes critical details:
+  * Different numbers (e.g., "50%" vs "40%", "2 weeks" vs "7 days")
+  * Different timelines (e.g., "within 2 weeks" vs "within 7 days")  
+  * Different quantities (e.g., "100mg" vs "200mg")
+  * Different confidence levels (e.g., "proven" vs "may help")
+- N/A: Content doesn't reference the claim topic at all
+
+Be specific about what changed. Focus on factual differences, not minor wording variations.
 
 Respond in this JSON format:
 {
   "fieldName1": [
-    { "status": "valid" | "violated" | "n/a", "violation": "..." },
+    { "status": "valid" | "warning" | "n/a", "violation": "..." },
     ...
   ],
   "fieldName2": [
@@ -119,8 +116,8 @@ Validate each field against all claims and provide the results in the specified 
         : null;
 
       result[field] = (violations as any[]).map((v) => ({
-        status: v.status,
-        violation: v.violation || undefined,
+        status: v.status === 'warning' ? VIOLATION_STATUS.Violated : v.status, // Convert warning to violated for consistency
+        violation: v.violation ? `Claim Warning: ${v.violation}` : undefined,
       }));
 
       if (charLimitResult) {
@@ -130,13 +127,13 @@ Validate each field against all claims and provide the results in the specified 
     return result;
   } catch (error) {
     console.error("Error in OpenAI validation:", error);
-    // Return all fields as error
+    // Return all fields as warning (not error since this is Stage 2)
     const result: ClaimResults = {};
     for (const fieldName of Object.keys(experienceFields)) {
       result[fieldName] = [
         {
           status: VIOLATION_STATUS.N_A,
-          violation: "Error during validation",
+          violation: "Claim Warning: Error during OpenAI validation",
         },
       ];
     }

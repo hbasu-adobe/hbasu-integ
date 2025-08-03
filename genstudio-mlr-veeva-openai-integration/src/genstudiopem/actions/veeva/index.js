@@ -1,5 +1,5 @@
 const { Core } = require('@adobe/aio-sdk')
-const { errorResponse, stringParameters, checkMissingRequestInputs } = require('../utils')
+const { errorResponse, checkMissingRequestInputs } = require('../utils')
 const fetch = require('node-fetch')
 
 async function main (params) {
@@ -10,9 +10,26 @@ async function main (params) {
 
   try {
     const operation = params.operation || 'auth'
+    
+    // Get credentials from environment variables
+    const veevaConfig = {
+      username: params.VEEVA_USERNAME,
+      password: params.VEEVA_PASSWORD,
+      vaultUrl: params.VEEVA_VAULT_URL,
+      apiVersion: params.VEEVA_API_VERSION,
+      objectName: params.VEEVA_OBJECT_NAME
+    }
+    
+    console.log('Using Veeva config:', { 
+      username: veevaConfig.username ? '[REDACTED]' : 'NOT_SET',
+      vaultUrl: veevaConfig.vaultUrl,
+      apiVersion: veevaConfig.apiVersion,
+      objectName: veevaConfig.objectName
+    })
+
     const requiredParams = operation === 'auth' 
-      ? ['username', 'password', 'vaultUrl', 'apiVersion']
-      : ['sessionId', 'query', 'vaultUrl', 'apiVersion']
+      ? []  // No required params since we get them from env
+      : ['sessionId', 'query']
     
     const requiredHeaders = ['Authorization']
     const errorMessage = checkMissingRequestInputs(params, requiredParams, requiredHeaders)
@@ -21,7 +38,13 @@ async function main (params) {
       return errorResponse(400, errorMessage, logger)
     }
 
-    const { vaultUrl, apiVersion } = params
+    // Validate that environment variables are set
+    if (!veevaConfig.username || !veevaConfig.password || !veevaConfig.vaultUrl || !veevaConfig.apiVersion) {
+      console.log('Missing Veeva configuration')
+      return errorResponse(500, 'Veeva configuration not properly set in environment variables', logger)
+    }
+
+    const { vaultUrl, apiVersion } = veevaConfig
     let url, headers, body
 
     if (operation === 'auth') {
@@ -33,8 +56,8 @@ async function main (params) {
         'Accept': 'application/json'
       }
       body = new URLSearchParams({
-        username: params.username,
-        password: params.password
+        username: veevaConfig.username,
+        password: veevaConfig.password
       })
 
       const response = await fetch(url, {
@@ -62,7 +85,13 @@ async function main (params) {
       }
     } else {
       // Query operation
-      url = `${vaultUrl}/api/${apiVersion}/query?q=${encodeURIComponent(params.query)}`
+      // Replace placeholder with actual object name from environment
+      let query = params.query
+      if (query.includes('VEEVA_OBJECT_NAME_PLACEHOLDER')) {
+        query = query.replace('VEEVA_OBJECT_NAME_PLACEHOLDER', veevaConfig.objectName)
+      }
+      
+      url = `${vaultUrl}/api/${apiVersion}/query?q=${encodeURIComponent(query)}`
       headers = {
         'Authorization': params.sessionId,
         'Content-Type': 'application/x-www-form-urlencoded'

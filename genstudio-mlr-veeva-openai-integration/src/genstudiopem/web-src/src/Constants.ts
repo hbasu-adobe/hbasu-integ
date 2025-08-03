@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 */
 import { Claim } from "@adobe/genstudio-uix-sdk";
 export const extensionId: string = "genstudio-mlr-claims-app";
-export const extensionLabel: string = "MLR for Veeva";
+export const extensionLabel: string = "Veeva MLR Integration";
 export const ICON_DATA_URI: string =
   "data:image/svg+xml;base64,PHN2ZyBpZD0ic3ZnNDQ4NSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMzc4LjcgMzg2IiB3aWR0aD0iMjQ1MyIgaGVpZ2h0PSIyNTAwIj48c3R5bGU+LnN0MHtmaWxsOiNmZjkxMDB9LnN0MXtmaWxsOiM2YTY4NjV9PC9zdHlsZT48cGF0aCBpZD0icGF0aDQ0OTciIGNsYXNzPSJzdDAiIGQ9Ik0xNjMuNiAzMzMuNEMxNDAuMSAyODUuNyA2MS43IDEyNyAxNy40IDM3LjQgNy44IDE3LjkgMCAuNiAwIDBoNjQuMWM0Mi4yIDg0LjYgODQuMyAxNjkuMyAxMjYuNSAyNTMuOUMyMzYuMiAxNjIuNSAyNzggNzcgMzE1LjkgMGg2Mi43Yy02Ny41IDEzOS4xLTExMy45IDIzNC4xLTE3Ni45IDM2MS40TDE4OS41IDM4NmwtMjUuOS01Mi42eiIvPjxwYXRoIGlkPSJwYXRoNDUwMSIgY2xhc3M9InN0MSIgZD0iTTEwNC40LjFIMjc0YzAgLjgtODMuOCAxNjkuNC04NC4yIDE2OS40QzE2MS45IDExMi4xIDEyOC4yIDUxLjQgMTA0LjQuMXoiLz48L3N2Zz4=";
 interface ClaimsLibrary {

@@ -99,11 +99,25 @@ const ClaimsChecker: React.FC<ClaimsCheckerProps> = ({
   };
 
   const renderViolationField = (title: string, items: Violation[]) => {
-    const issueCount = items?.filter(
-      (item) => item.status === VIOLATION_STATUS.Violated
-    ).length;
     const hasViolations = (v: Violation) =>
       v.status === VIOLATION_STATUS.Violated && v.violation;
+    
+    const violatedItems = items.filter(hasViolations);
+    
+    // Separate Stage 1 errors and Stage 2 warnings
+    const stage1Errors = violatedItems.filter(item => 
+      item.violation!.startsWith("Violated claim:") || item.violation!.startsWith("Violated:")
+    );
+    const stage2Warnings = violatedItems.filter(item => 
+      item.violation!.startsWith("Claim Warning:")
+    );
+    
+    // Show all Stage 1 errors but max 2 Stage 2 warnings
+    const limitedStage2Warnings = stage2Warnings.slice(0, 2);
+    const displayItems = [...stage1Errors, ...limitedStage2Warnings];
+    
+    const issueCount = displayItems.length;
+    const hiddenWarningsCount = stage2Warnings.length - limitedStage2Warnings.length;
 
     return (
       <View>
@@ -111,8 +125,11 @@ const ClaimsChecker: React.FC<ClaimsCheckerProps> = ({
         <View paddingStart="size-100">
           {issueCount > 0 && (
             <Flex direction="column" gap="size-100">
-              {items.map(
-                (item) => hasViolations(item) && renderViolationFieldEntry(item)
+              {displayItems.map((item) => renderViolationFieldEntry(item))}
+              {hiddenWarningsCount > 0 && (
+                <Text marginTop="size-50">
+                  + {hiddenWarningsCount} more warning{hiddenWarningsCount > 1 ? 's' : ''} (Stage 2 limit: 2 warnings shown)
+                </Text>
               )}
             </Flex>
           )}

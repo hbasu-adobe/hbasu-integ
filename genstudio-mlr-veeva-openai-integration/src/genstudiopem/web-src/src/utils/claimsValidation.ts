@@ -106,3 +106,31 @@ export const validateClaims = (
 
   return result;
 };
+
+// New function that accepts claims directly from Veeva
+export const validateClaimsWithStringMatching = (
+  experience: Experience,
+  claims: { id: string; description: string }[]
+): ClaimResults => {
+  const result: ClaimResults = {};
+  const experienceFields = experience.experienceFields;
+
+  for (const [fieldName, entry] of Object.entries(experienceFields)) {
+    if (typeof entry.fieldValue === "string") {
+      result[fieldName] = [];
+      claims.forEach((claim) => {
+        result[fieldName].push(checkClaim(entry.fieldValue, claim.description));
+      });
+      result[fieldName].push(checkCharacterLimits(fieldName, entry.fieldValue));
+    }
+  }
+
+  return result;
+};
+
+// Helper function to check if there are any violations in the results
+export const hasViolations = (claimResults: ClaimResults): boolean => {
+  return Object.values(claimResults).some(violations =>
+    violations.some(violation => violation.status === VIOLATION_STATUS.Violated)
+  );
+};

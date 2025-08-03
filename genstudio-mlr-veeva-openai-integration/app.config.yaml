@@ -12,6 +12,12 @@ extensions:
               runtime: 'nodejs:20'
               inputs:
                 LOG_LEVEL: debug
+                VEEVA_USERNAME: $VEEVA_USERNAME
+                VEEVA_PASSWORD: $VEEVA_PASSWORD
+                VEEVA_VAULT_URL: $VEEVA_VAULT_URL
+                VEEVA_API_VERSION: $VEEVA_API_VERSION
+                VEEVA_OBJECT_NAME: $VEEVA_OBJECT_NAME
+                USE_VEEVA: $USE_VEEVA
               annotations:
                 require-adobe-auth: true
                 final: true

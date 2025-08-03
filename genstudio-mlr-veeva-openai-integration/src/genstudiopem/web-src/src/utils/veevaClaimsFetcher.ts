@@ -44,23 +44,14 @@ interface VeevaQueryResponse {
   }>;
 }
 
-async function getVeevaSessionId(authToken: string, orgId: string, {
-  username,
-  password,
-  vaultUrl,
-  apiVersion
-}: AuthParams): Promise<string> {
+async function getVeevaSessionId(authToken: string, orgId: string): Promise<string> {
   try {
     const data = await actionWebInvoke(
       VEEVA_ACTION_URL,
       authToken,
       orgId,
       {
-        operation: 'auth',
-        username,
-        password,
-        vaultUrl,
-        apiVersion
+        operation: 'auth'
       },
       { method: 'POST', isFormData: false }
     );
@@ -74,21 +65,12 @@ async function getVeevaSessionId(authToken: string, orgId: string, {
   }
 }
 
-export async function fetchClaimsFromVeevaVault(authToken: string, orgId: string, {
-  username,
-  password,
-  vaultUrl,
-  apiVersion,
-  objectName
-}: AuthParams & { objectName?: string }): Promise<ClaimsLibrary[]> {
+export async function fetchClaimsFromVeevaVault(authToken: string, orgId: string): Promise<ClaimsLibrary[]> {
   try {
     console.log('Starting Veeva fetch process...');
-    const veevaSessionId = await getVeevaSessionId(authToken, orgId, { 
-      username, 
-      password, 
-      vaultUrl, 
-      apiVersion
-    });
+    
+    // Get session ID - credentials are now handled by backend
+    const veevaSessionId = await getVeevaSessionId(authToken, orgId);
     console.log('Got Veeva session ID:', veevaSessionId);
 
     console.log('Querying Veeva for claims...');
@@ -99,13 +81,7 @@ export async function fetchClaimsFromVeevaVault(authToken: string, orgId: string
       {
         operation: 'query',
         sessionId: veevaSessionId,
-        query: `SELECT id, name__v, claim_category_id__c, claim_category_label__c, claim_statement__c FROM ${objectName}`,
-        vaultUrl,
-        apiVersion,
-        queryType: 'url',
-        username,
-        password,
-        objectName
+        query: `SELECT id, name__v, claim_category_id__c, claim_category_label__c, claim_statement__c FROM VEEVA_OBJECT_NAME_PLACEHOLDER`
       },
       { method: 'GET' }
     );

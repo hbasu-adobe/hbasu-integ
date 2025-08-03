@@ -28,8 +28,7 @@ import { extensionId } from "../Constants";
 import { getClaims } from "../utils/claimsSource";
 import { useGuestConnection } from "../hooks";
 import { ClaimResults } from "../types";
-import { validateClaimsWithOpenAI } from "../utils/openAiValidation";
-import { checkCharacterLimits } from "../utils/claimsValidation";
+import { validateClaimsTwoStage } from "../utils/twoStageValidation";
 import ClaimsChecker from "./ClaimsChecker";
 import { actionWebInvoke } from "../utils/actionWebInvoke";
 import { ClaimsLibrary } from "../utils/veevaClaimsFetcher";
@@ -226,22 +225,11 @@ const RightPanelComponent = (): JSX.Element => {
         claims: claimsToUse
       });
 
-      const aiResult = await validateClaimsWithOpenAI(selectedExperience, claimsToUse);
-      
-      // Local character checks
-      for (const [field, entry] of Object.entries(selectedExperience.experienceFields)) {
-        if (typeof entry.fieldValue === "string") {
-          const charLimitResult = checkCharacterLimits(field, entry.fieldValue);
-          if (charLimitResult && charLimitResult.status === "violated") {
-            if (!aiResult[field]) aiResult[field] = [];
-            aiResult[field].push(charLimitResult);
-          }
-        }
-      }
+      const validationResult = await validateClaimsTwoStage(selectedExperience, claimsToUse);
 
       // Create array with null for other experiences
       const results = new Array(experiences.length).fill(null);
-      results[selectedExperienceIndex] = aiResult;
+      results[selectedExperienceIndex] = validationResult;
       setClaimsResults(results);
     } catch (error) {
       console.error("Error in claims validation:", error);
