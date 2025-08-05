@@ -38,11 +38,13 @@ import {
 interface ClaimsCheckerProps {
   claims: ClaimResults[]; // or define a more specific type
   experienceNumber: number;
+  claimsData: Array<{ id: string; description: string; [key: string]: any }>;
 }
 
 const ClaimsChecker: React.FC<ClaimsCheckerProps> = ({
   claims,
   experienceNumber,
+  claimsData,
 }) => {
   // Add null check for claims
   if (!claims || !claims[experienceNumber]) {
@@ -79,6 +81,22 @@ const ClaimsChecker: React.FC<ClaimsCheckerProps> = ({
   };
 
   const renderViolationFieldEntry = (item: Violation) => {
+    // Find reference for violations
+    let reference = null;
+    if (item.violation?.startsWith("Violated claim:")) {
+      const claimText = item.violation.replace("Violated claim:", "").trim();
+      const matchingClaim = claimsData.find(claim => 
+        claim.description.includes(claimText) || claimText.includes(claim.description)
+      );
+      reference = matchingClaim?.reference;
+    } else if (item.violation?.startsWith("Needs Attention:")) {
+      const violationText = item.violation.replace("Needs Attention:", "").trim();
+      const matchingClaim = claimsData.find(claim => 
+        violationText.includes(claim.description) || claim.description.includes(violationText)
+      );
+      reference = matchingClaim?.reference;
+    }
+
     return (
       <View key={item.violation}>
         <Grid
@@ -87,7 +105,16 @@ const ClaimsChecker: React.FC<ClaimsCheckerProps> = ({
           alignItems="start"
         >
           <Alert size="S" color="notice" />
-          <Text>{item.violation}</Text>
+          <Flex direction="column" gap="size-50">
+            <Text>{item.violation}</Text>
+            {reference && reference.trim() !== "" && (
+              <Text>
+                <a href={reference} target="_blank" rel="noopener noreferrer" style={{fontSize: '0.9em', color: '#0066cc'}}>
+                  📋 View Reference
+                </a>
+              </Text>
+            )}
+          </Flex>
           {item.violation!.includes(CLAIM_VIOLATION_PREFIX) && (
             <ActionButton onPress={() => handleCopyPress(item.violation!)}>
               <Copy />
@@ -109,7 +136,7 @@ const ClaimsChecker: React.FC<ClaimsCheckerProps> = ({
       item.violation!.startsWith("Violated claim:") || item.violation!.startsWith("Violated:")
     );
     const stage2Warnings = violatedItems.filter(item => 
-      item.violation!.startsWith("Claim Warning:")
+      item.violation!.startsWith("Needs Attention:")
     );
     
     // Show all Stage 1 errors but max 2 Stage 2 warnings

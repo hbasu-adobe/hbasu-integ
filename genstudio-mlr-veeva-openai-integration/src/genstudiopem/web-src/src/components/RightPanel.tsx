@@ -157,6 +157,8 @@ const RightPanelComponent = (): JSX.Element => {
     if (selectedExperienceId && experiences?.length) {
       const index = getExperienceIndex(selectedExperienceId);
       setSelectedExperienceIndex(index);
+    } else if (experiences?.length && selectedExperienceIndex === null) {
+      setSelectedExperienceIndex(0);
     }
 
     window.addEventListener("storage", handleStorageChange);
@@ -350,6 +352,7 @@ const RightPanelComponent = (): JSX.Element => {
       <ClaimsChecker
         claims={claimsResults}
         experienceNumber={selectedExperienceIndex}
+        claimsData={claimsData}
       />
     );
   };

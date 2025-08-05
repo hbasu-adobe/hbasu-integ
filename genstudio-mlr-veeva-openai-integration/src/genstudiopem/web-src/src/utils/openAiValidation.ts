@@ -45,20 +45,18 @@ export async function validateClaimsWithOpenAI(
   console.log('Experience fields:', JSON.stringify(experienceFields, null, 2));
   console.log('Claims text being sent to OpenAI:', claimsText);
 
-  const systemPrompt = `You are a medical claims validator for Stage 2 validation. Exact text matching has already been checked. Focus on claims that reference the same topic but have different critical details.
+  const systemPrompt = `You are a medical claims validator for Stage 2 validation. Exact text matching has already been checked.
 
-NOTE: You only provide warnings, not violations. All your findings will be shown as "Claim Warning" to users.
+NOTE: You only provide warnings if and only if the essence of the content violates any of the claims. All your findings will be shown as "Needs Attention" to users.
 
 Rules:
 - VALID: Content maintains the same meaning and all critical details as the claim
-- WARNING: Content is about the same topic as the claim but changes critical details:
+- WARNING: Content is about the same topic as the claim but changes critical details. 
   * Different numbers (e.g., "50%" vs "40%", "2 weeks" vs "7 days")
   * Different timelines (e.g., "within 2 weeks" vs "within 7 days")  
   * Different quantities (e.g., "100mg" vs "200mg")
   * Different confidence levels (e.g., "proven" vs "may help")
 - N/A: Content doesn't reference the claim topic at all
-
-Be specific about what changed. Focus on factual differences, not minor wording variations.
 
 Respond in this JSON format:
 {
@@ -88,7 +86,7 @@ Validate each field against all claims and provide the results in the specified 
       userPrompt
     });
     const response = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -105,7 +103,13 @@ Validate each field against all claims and provide the results in the specified 
       return {};
     }
 
-    const validationResult = JSON.parse(content);
+    // Handle GPT-4o returning JSON wrapped in markdown code blocks
+    let cleanContent = content;
+    if (content.startsWith('```json')) {
+      cleanContent = content.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    }
+    
+    const validationResult = JSON.parse(cleanContent);
 
     // Convert to ClaimResults type and append character limit check
     const result: ClaimResults = {};
@@ -117,7 +121,7 @@ Validate each field against all claims and provide the results in the specified 
 
       result[field] = (violations as any[]).map((v) => ({
         status: v.status === 'warning' ? VIOLATION_STATUS.Violated : v.status, // Convert warning to violated for consistency
-        violation: v.violation ? `Claim Warning: ${v.violation}` : undefined,
+        violation: v.violation ? `Needs Attention: ${v.violation}` : undefined,
       }));
 
       if (charLimitResult) {
@@ -133,7 +137,7 @@ Validate each field against all claims and provide the results in the specified 
       result[fieldName] = [
         {
           status: VIOLATION_STATUS.N_A,
-          violation: "Claim Warning: Error during OpenAI validation",
+          violation: "Needs Attention: Error during OpenAI validation",
         },
       ];
     }

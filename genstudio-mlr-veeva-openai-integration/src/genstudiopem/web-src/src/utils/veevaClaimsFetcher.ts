@@ -6,6 +6,7 @@ export interface Claim {
   id: string;           // logical claim id, e.g., "claim1"
   description: string;
   veevaId: string;      // Veeva record id, e.g., "V1A000000000101"
+  reference?: string;   // Claim reference URL
 }
 
 export interface ClaimsLibrary {
@@ -81,7 +82,7 @@ export async function fetchClaimsFromVeevaVault(authToken: string, orgId: string
       {
         operation: 'query',
         sessionId: veevaSessionId,
-        query: `SELECT id, name__v, claim_category_id__c, claim_category_label__c, claim_statement__c FROM VEEVA_OBJECT_NAME_PLACEHOLDER`
+        query: `SELECT id, name__v, claim_category_id__c, claim_category_label__c, claim_statement__c, claim_reference__c FROM VEEVA_OBJECT_NAME_PLACEHOLDER`
       },
       { method: 'GET' }
     );
@@ -110,6 +111,7 @@ export async function fetchClaimsFromVeevaVault(authToken: string, orgId: string
           id: claim.name__v,
           description: claim.claim_statement__c,
           veevaId: claim.id,
+          reference: claim.claim_reference__c,
         });
       }
       return Object.values(grouped);
