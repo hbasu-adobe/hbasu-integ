@@ -31,7 +31,7 @@ import { removePodPrefix } from "./stringUtils";
 const maxCharacterLimits = {
   header: 80,
   pre_header: 100,
-  body: 300,
+  body: 500,
 };
 
 function checkClaim(text: string, claim: string): Violation {

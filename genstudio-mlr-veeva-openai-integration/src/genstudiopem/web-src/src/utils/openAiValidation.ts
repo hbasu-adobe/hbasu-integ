@@ -13,7 +13,7 @@ const openai = new OpenAIApi(configuration);
 const maxCharacterLimits = {
   header: 80,
   pre_header: 100,
-  body: 300,
+  body: 500,
 };
 
 function checkCharacterLimits(fieldName: string, text: string) {
